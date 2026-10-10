@@ -1,0 +1,149 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Generate Report Cards</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; padding: 30px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .topbar { background: linear-gradient(135deg, #16a34a 0%, #065f46 100%); color: #fff; padding: 25px 30px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .topbar h1 { font-size: 22px; font-weight: 800; margin: 0; }
+        .topbar p { margin: 4px 0 0 0; opacity: 0.85; font-size: 13px; }
+        .topbar a { color: #fff; text-decoration: underline; font-weight: 700; font-size: 13px; }
+        .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+        .card h2 { color: #16a34a; font-size: 17px; font-weight: 800; margin-bottom: 8px; }
+        .card .subtitle { font-size: 13px; color: #64748b; margin-bottom: 25px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 18px; }
+        label { display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #475569; margin-bottom: 6px; letter-spacing: 0.5px; }
+        select { width: 100%; padding: 12px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: 600; color: #0f172a; background: #f8fafc; }
+        select:focus { outline: none; border-color: #16a34a; background: #fff; box-shadow: 0 0 0 3px rgba(22,163,74,0.1); }
+        select:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+        .hint { font-size: 11px; color: #64748b; margin-top: 4px; display: block; }
+        .hint.warning { color: #d97706; }
+        button.btn-submit { width: 100%; padding: 14px; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 12px rgba(22,163,74,0.3); }
+        button.btn-submit:hover:not(:disabled) { transform: translateY(-2px); }
+        button.btn-submit:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; }
+        .flash { padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; margin-bottom: 15px; }
+        .flash.danger { background: #fee2e2; color: #991b1b; }
+        .flash.warning { background: #fef3c7; color: #92400e; }
+        .flash.info { background: #dbeafe; color: #1e40af; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="topbar">
+        <div>
+            <h1>Generate Report Cards</h1>
+            <p>Select year, term, class, and stream</p>
+        </div>
+        <a href="{{ url_for('index') }}">Back to Dashboard</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, msg in messages %}
+        <div class="flash {{ category }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="card">
+        <h2>Report Card Filters</h2>
+        <p class="subtitle">The examination is auto-selected based on Year and Term.</p>
+
+        <form method="GET" action="{{ url_for('report_pupils') }}" id="reportForm">
+            <div class="form-row">
+                <div>
+                    <label for="academic_year">Academic Year *</label>
+                    <select name="academic_year" id="academic_year" required>
+                        {% for y in years %}
+                        <option value="{{ y }}">{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="term">Term *</label>
+                    <select name="term" id="term" required>
+                        <option value="">-- Select Term --</option>
+                        <option value="Term I">Term I (Jan - May)</option>
+                        <option value="Term II">Term II (Jul - Nov)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div>
+                    <label for="class_id">Class *</label>
+                    <select name="class_id" id="class_id" required>
+                        <option value="">-- Select Class --</option>
+                        {% for c in classes %}
+                        <option value="{{ c.id }}">{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="stream_id">Stream</label>
+                    <select name="stream_id" id="stream_id" disabled>
+                        <option value="">-- All Streams --</option>
+                    </select>
+                    <small class="hint" id="streamHint">Optional. Only shown if the class has streams.</small>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit" id="submitBtn" disabled>
+                Continue to Pupil List
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const streamData = {{ streams_json|tojson }};
+    const yearSel = document.getElementById('academic_year');
+    const termSel = document.getElementById('term');
+    const classSel = document.getElementById('class_id');
+    const streamSel = document.getElementById('stream_id');
+    const submitBtn = document.getElementById('submitBtn');
+    const streamHint = document.getElementById('streamHint');
+
+    function updateStreams() {
+        const classId = classSel.value;
+        streamSel.innerHTML = '<option value="">-- All Streams --</option>';
+        if (!classId) {
+            streamSel.disabled = true;
+            streamHint.textContent = 'Optional. Only shown if the class has streams.';
+            checkSubmit();
+            return;
+        }
+        const matches = streamData.filter(s => String(s.class_id) === String(classId));
+        if (matches.length === 0) {
+            streamSel.disabled = true;
+            streamHint.textContent = 'No streams for this class.';
+            streamHint.className = 'hint warning';
+        } else {
+            streamSel.disabled = false;
+            matches.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.name;
+                streamSel.appendChild(opt);
+            });
+            streamHint.textContent = matches.length + ' stream(s) available.';
+            streamHint.className = 'hint';
+        }
+        checkSubmit();
+    }
+
+    function checkSubmit() {
+        submitBtn.disabled = !(yearSel.value && termSel.value && classSel.value);
+    }
+
+    yearSel.addEventListener('change', checkSubmit);
+    termSel.addEventListener('change', checkSubmit);
+    classSel.addEventListener('change', () => { updateStreams(); checkSubmit(); });
+    streamSel.addEventListener('change', checkSubmit);
+
+    updateStreams();
+    checkSubmit();
+</script>
+</body>
+</html>

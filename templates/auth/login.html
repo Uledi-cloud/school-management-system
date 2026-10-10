@@ -1,0 +1,219 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+    <meta name="theme-color" content="#1e3a8a">
+    <title>School Login</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+        }
+        .login-container {
+            background: #fff;
+            padding: 35px 26px;
+            border-radius: 18px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            width: 100%;
+            max-width: 440px;
+        }
+        .brand-header { text-align: center; margin-bottom: 20px; }
+        .brand-header .icon { font-size: 60px; line-height: 1; margin-bottom: 10px; display: inline-block; }
+        .brand-header h2 { color: #1e3a8a; font-weight: 900; font-size: 22px; margin-bottom: 5px; line-height: 1.25; }
+        .brand-header p { color: #64748b; font-size: 13px; font-weight: 600; }
+        hr { border: none; border-top: 2px solid #e2e8f0; margin: 16px 0; }
+        .form-group { margin-bottom: 14px; }
+        label {
+            display: block; margin-bottom: 5px; font-weight: 800;
+            color: #334155; font-size: 11px; text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #0f172a;
+            background-color: #f8fafc;
+            font-family: inherit;
+            min-height: 46px;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        select {
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+        input:focus, select:focus {
+            border-color: #1e3a8a; background: #fff; outline: none;
+            box-shadow: 0 0 0 4px rgba(30,58,138,0.1);
+        }
+        .password-wrap { position: relative; }
+        .password-wrap input { padding-right: 46px; }
+        .toggle-password {
+            position: absolute; top: 50%; right: 8px; transform: translateY(-50%);
+            background: transparent; border: none; cursor: pointer;
+            color: #64748b; font-size: 18px; padding: 8px 10px;
+            min-height: auto;
+        }
+        .btn-submit {
+            width: 100%; padding: 14px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%);
+            color: white; border: none; border-radius: 10px;
+            font-size: 15px; font-weight: 800;
+            cursor: pointer; margin-top: 8px;
+            box-shadow: 0 6px 16px rgba(30,58,138,0.35);
+            min-height: 48px;
+        }
+        .hint { font-size: 11px; color: #64748b; margin-top: 4px; display: block; font-weight: 600; }
+        .hint.success { color: #16a34a; }
+        .hint.warning { color: #d97706; }
+        .hint.error { color: #dc2626; }
+        .flash-msg { padding: 10px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; margin-bottom: 14px; }
+        .flash-success { background: #dcfce7; color: #166534; border-left: 4px solid #16a34a; }
+        .flash-danger  { background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626; }
+        .flash-warning { background: #fef3c7; color: #92400e; border-left: 4px solid #d97706; }
+        .flash-info    { background: #dbeafe; color: #1e40af; border-left: 4px solid #1e3a8a; }
+        .footer-note { text-align: center; font-size: 11.5px; color: #64748b; margin-top: 18px; padding-top: 14px; border-top: 1px solid #e2e8f0; }
+
+        @media (max-width: 400px) {
+            .login-container { padding: 26px 18px; }
+            .brand-header .icon { font-size: 52px; }
+            .brand-header h2 { font-size: 19px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="brand-header">
+            <div class="icon">🎓</div>
+            <h2>School Management System</h2>
+            <p>Sign in to your account</p>
+        </div>
+
+        <hr>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, msg in messages %}
+            <div class="flash-msg flash-{{ category }}">{{ msg }}</div>
+          {% endfor %}
+        {% endwith %}
+
+        <form action="{{ url_for('auth.login') }}" method="POST">
+            <div class="form-group">
+                <label for="schoolSelect">Select Registered School</label>
+                <select id="schoolSelect" name="school_id">
+                    <option value="" disabled selected>Loading schools...</option>
+                </select>
+                <small class="hint" id="schoolHint">Pick your school from the list</small>
+            </div>
+
+            <div class="form-group">
+                <label for="roleSelect">Role</label>
+                <select id="roleSelect" name="role" required>
+                    <option value="" disabled selected>-- Select your role --</option>
+                    <option value="developer">Developer</option>
+                    <option value="admin">Admin</option>
+                    <option value="teacher">Teacher</option>
+                    <option value="pupil">Pupil</option>
+                    <option value="parent">Parent</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="username">Username / Email / Phone / Admission No</label>
+                <input type="text" id="username" name="username"
+                       placeholder="Enter your login" required autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="password-wrap">
+                    <input type="password" id="password" name="password"
+                           placeholder="Enter your password" required autocomplete="current-password">
+                    <button type="button" class="toggle-password" onclick="togglePwd()" aria-label="Show password">
+                        <i class="fa fa-eye" id="eyeIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit">Sign In</button>
+        </form>
+
+        <p class="footer-note">
+            Accounts are created by the school administrator.
+        </p>
+    </div>
+
+    <script>
+        var schoolSelect = document.getElementById('schoolSelect');
+        var roleSelect = document.getElementById('roleSelect');
+        var schoolHint = document.getElementById('schoolHint');
+
+        function fetchSchools() {
+            fetch('{{ url_for("auth.api_schools") }}', { cache: 'no-store' })
+                .then(function(r){ return r.json(); })
+                .then(function(schools) {
+                    schoolSelect.innerHTML = '<option value="" disabled selected>-- Choose your school --</option>';
+                    if (!schools || schools.length === 0) {
+                        var opt = document.createElement('option');
+                        opt.value = ''; opt.disabled = true;
+                        opt.textContent = 'No schools registered yet';
+                        schoolSelect.appendChild(opt);
+                        schoolHint.textContent = 'Log in as Developer first';
+                        schoolHint.className = 'hint warning';
+                    } else {
+                        schools.forEach(function(s) {
+                            var o = document.createElement('option');
+                            o.value = s.id;
+                            o.textContent = s.name;
+                            schoolSelect.appendChild(o);
+                        });
+                        schoolHint.textContent = 'Pick your school';
+                        schoolHint.className = 'hint';
+                    }
+                })
+                .catch(function() {
+                    schoolSelect.innerHTML = '<option value="" disabled selected>Error loading schools</option>';
+                    schoolHint.textContent = 'Pull to retry';
+                    schoolHint.className = 'hint error';
+                });
+        }
+
+        roleSelect.addEventListener('change', function() {
+            if (this.value === 'developer') {
+                schoolSelect.removeAttribute('required');
+                schoolSelect.value = '';
+                schoolHint.textContent = 'Not needed for Developer';
+                schoolHint.className = 'hint success';
+            } else {
+                schoolSelect.setAttribute('required', 'required');
+                schoolHint.textContent = 'Required for ' + this.value;
+                schoolHint.className = 'hint warning';
+            }
+        });
+
+        function togglePwd() {
+            var i = document.getElementById('password');
+            var e = document.getElementById('eyeIcon');
+            if (i.type === 'password') { i.type = 'text'; e.className = 'fa fa-eye-slash'; }
+            else { i.type = 'password'; e.className = 'fa fa-eye'; }
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchSchools);
+    </script>
+</body>
+</html>
